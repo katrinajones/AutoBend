@@ -6,9 +6,7 @@ import maya.api.OpenMaya as om2
 ##########################################################################################################################
 #Make objects
 
-#Function to set up scene ready for automated bending. 
-#Creates objects needed for each joint and sends them to the joint center. 
-#Alignment of axes and placement of locators must be done by hand.
+#Function to set up scene ready for automated bending. Creates objects needed for each joint and sends them to the joint center. Alignment of axes and placement of locators must be done by hand.
 
 #COR - COR object name
 #base_axis - axis object
@@ -80,6 +78,7 @@ def duplicate_verts(Ant, Post, Ant1, Post1):
     #Duplicate vertebral meshes
     cmds.duplicate(Post, n= Post1)
     cmds.duplicate(Ant, n= Ant1)
+
     
 #############################################################################################    
 #Set up one joint
@@ -197,6 +196,7 @@ cent_D, cent_V, cent_L, cent_R, Pcent_D, Pcent_V, Pcent_L, Pcent_R):
 #joint_tol - tolerance for zyg disarticulation, total=0, 0.5=half way
 #ZygTest - True/False - will testing based on zygapophyses be carried out
 #CentTest - True/False - will testing based on centrum strain be carried out
+#Transl_fact - amount of translation allowed as % vertebral area e.g., 0.005
 
 #wrapper for bending analysis to make it neater
 
@@ -206,8 +206,8 @@ cent_D, cent_V, cent_L, cent_R, Pcent_D, Pcent_V, Pcent_L, Pcent_R):
 #strain - cent/zyg strain in both directions
 #v_area - vertebra area for scaling
 
-def digital_bending(joint, angle, it, strain, v_area, 
-ZygTest=True, CentTest=True, Transl=False):
+def digital_bending(joint,v_area, angle=0.5, it=0.005, cent_strain=0.5, zyg_strain=0.5,  
+ZygTest=True, CentTest=True, Transl=False, Transl_fact=0.005):
 
     #define objects
     ant=str(joint)
@@ -231,12 +231,12 @@ ZygTest=True, CentTest=True, Transl=False):
     Pcent_V='Pcent_V'+ant
     Pcent_L='Pcent_L'+ant
     Pcent_R='Pcent_R'+ant
-    cent_strain = strain
-    zyg_strain = strain
+    cent_strain = cent_strain
+    zyg_strain = zyg_strain
 
     angles = bending_analysis(distbone, boo, new_axis, start_x, start_y, start_z, range_x, range_y, range_z,
     Zyg_ant, Zyg_post, v_area, cent_D, cent_V, cent_L, cent_R, cent_strain, zyg_strain, 
-    Pcent_D, Pcent_V, Pcent_L, Pcent_R, ZygTest, CentTest, Transl)
+    Pcent_D, Pcent_V, Pcent_L, Pcent_R, ZygTest, CentTest, Transl, Transl_fact)
 
     return angles
 
@@ -246,7 +246,7 @@ ZygTest=True, CentTest=True, Transl=False):
 
 def bending_analysis(distbone, boo, new_axis, start_x, start_y, start_z, range_x, range_y, range_z,
  Zyg_ant, Zyg_post, v_area, cent_D, cent_V, cent_L, cent_R, cent_strain, zyg_strain, 
- Pcent_D, Pcent_V, Pcent_L, Pcent_R, ZygTest=True, CentTest=True, Transl=True):
+ Pcent_D, Pcent_V, Pcent_L, Pcent_R,  ZygTest, CentTest, Transl, Transl_fact):
      
 ###############################
 #Starting objects
@@ -259,7 +259,7 @@ def bending_analysis(distbone, boo, new_axis, start_x, start_y, start_z, range_x
     #Centrum height, aprox half centrum length
     #cent_H = wDist(cent_D, cent_V, new_axis)   
     #Or sqrt(v-area) aprox 3 times CL
-    trnsl=np.sqrt(v_area)*0.005 #sqaure root intersection threshold, equivalent to ~3% CL  
+    trnsl=np.sqrt(v_area)*Transl_fact #sqaure root intersection threshold, equivalent to ~3% CL  
 
     #Measure intersection and set threshold
     start_a = cmds.polyEvaluate(boo,a=True)
